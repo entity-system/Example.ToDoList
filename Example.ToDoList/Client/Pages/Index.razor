@@ -1,0 +1,36 @@
+﻿@page "/"
+@page "/{id:long}"
+
+@using EntitySystem.Client.Components
+@using EntitySystem.Client.Services
+@using EntitySystem.Client.Domain.Data.Source
+@using EntitySystem.Client.Domain.Data.Options
+@using EntitySystem.Client.Domain.Data.Property.Extensions
+@using EntitySystem.Client.Domain.Data.Source.Extensions.Link
+@using Example.ToDoList.Client.Services
+@using Example.ToDoList.Shared
+
+@implements IDataOptions
+
+@inject IDataService DataService
+
+<Alerts/>
+@_dataSource?.Render(this)
+
+@code {
+    private IDataSource? _dataSource;
+
+    [Parameter]
+    public long Id { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _dataSource = DataService.Get<ToDo, ToDoService>("ToDo")
+            .LinkForward()
+            .LinkBack()
+            .Property("Text", t => t.Text)
+            .Join<Categorized, CategorizedService, ToDo>("Category", t => t, c => c.ToDo, dc => dc
+                .Target<Group, GroupService>("Group", g => g.Group, g => g.Name, dg => dg
+                    .Property("Group name", g => g.Name)));
+    }
+}
